@@ -17,16 +17,3 @@ spec:
         image: <docker_image>:latest  # Replace <docker_image> with your image
         ports:
         - containerPort: 3000
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nodejs-app
-spec:
-  type: ClusterIP
-  ports:
-  - port: 3000
-    targetPort: 3000
-  selector:
-    app: nodejs-app
