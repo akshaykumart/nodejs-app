@@ -47,3 +47,35 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - run: |
           docker tag my-node-app:latest ${{ secrets.DOCKER_USERNAME }}/my-node-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-node-app:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f kubernetes/deployment.yaml
+
+      - name: Verify Deployment
+        run: |
+          kubectl rollout status deployment/my-node-app
+        working-directory: kubernetes
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          kubectl rollout undo deployment/my-node-app
