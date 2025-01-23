@@ -9,67 +9,41 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
 
-    - name: Cache Docker layers
-      uses: actions/cache@v2
-      with:
-        path: ~/.docker/buildx-cache
-        key: ${{ runner.os }}-docker-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
+      - name: Install dependencies
+        run: npm install
+        working-directory: app
 
-    - name: Build Docker Image
-      run: |
-        docker build -t your-image-name .
+      - name: Run tests
+        run: npm test
+        working-directory: app
 
-    - name: Run Tests (if applicable)
-      run: |
-        docker run your-image-name test
-
-    - name: Push Docker Image to Registry (DockerHub, ECR, etc.)
-      run: |
-        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-        docker tag your-image-name your-registry/your-image-name:latest
-        docker push your-registry/your-image-name:latest
-
-  deploy:
+  docker-build:
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-and-test
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Kubernetes Cluster (Using Minikube or Kind)
-      run: |
-        curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.21.2/bin/linux/amd64/kubectl
-        chmod +x ./kubectl
-        mv ./kubectl /usr/local/bin/kubectl
+      - name: Build Docker image
+        run: |
+          docker build -t my-node-app:latest .
+        working-directory: app
 
-        # Install Minikube or Kind
-        curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-        sudo chmod +x minikube
-        sudo mv minikube /usr/local/bin
-
-        minikube start
-
-    - name: Deploy Docker Image to Kubernetes Cluster
-      run: |
-        kubectl apply -f k8s/deployment.yaml
-        kubectl apply -f k8s/service.yaml
-
-    - name: Verify Deployment
-      run: |
-        kubectl rollout status deployment/your-deployment
-
-    - name: Rollback if Deployment Fails
-      run: |
-        kubectl rollout undo deployment/your-deployment
-        exit 1
+      - name: Push Docker image to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - run: |
+          docker tag my-node-app:latest ${{ secrets.DOCKER_USERNAME }}/my-node-app:latest
