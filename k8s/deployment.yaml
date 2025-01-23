@@ -1,19 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nodejs-app
+  name: talking-lands-app
+  labels:
+    app: talking-lands-app
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: nodejs-app
+      app: talking-lands-app
   template:
     metadata:
       labels:
-        app: nodejs-app
+        app: talking-lands-app
     spec:
       containers:
-      - name: nodejs-app
-        image: <docker_image>:latest  # Replace <docker_image> with your image
+      - name: alking-lands-app
+        image: <DOCKERHUB_USERNAME>/talking-lands-app:latest
         ports:
         - containerPort: 3000
