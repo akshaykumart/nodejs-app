@@ -1,12 +1,12 @@
----
 apiVersion: v1
 kind: Service
 metadata:
-  name: nodejs-app
+  name: talking-lands-app-service
 spec:
-  type: ClusterIP
-  ports:
-  - port: 3000
-    targetPort: 3000
   selector:
-    app: nodejs-app
+    app: talking-lands-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+  type: ClusterIP
